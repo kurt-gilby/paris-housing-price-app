@@ -3,12 +3,14 @@ import joblib
 import numpy as np
 import pandas as pd
 import json
+import traceback
 
 app = Flask(__name__)
 app.secret_key = 'dev_secret_123'  # Replace with a strong secret in production
 
 # Load model and transformers
 model = joblib.load("models/linear_model.pkl")
+residual_std = joblib.load("models/residual_std.pkl")
 print("✅ Loaded model type:", type(model)) 
 qt_X = joblib.load("models/quantile_transformer_X.pkl")
 qt_y = joblib.load("models/quantile_transformer_y.pkl")
@@ -79,13 +81,33 @@ def predict():
         # Transform + predict
         X_input_num_trans = qt_X.transform(X_input_num)
         X_trans = np.hstack([X_input_num_trans, X_input_cat.values])
-        y_pred_trans = model.predict(X_trans)
-        y_pred = qt_y.inverse_transform(y_pred_trans.reshape(-1, 1))[0, 0]
-        prediction = round(y_pred, 2)
+        try:
 
-        # 🔄 Instead of redirecting for AJAX
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({"prediction": prediction})
+            # Predict in transformed space
+            y_pred_trans = model.predict(X_trans)
+
+            # Inverse-transform prediction
+            y_pred = qt_y.inverse_transform(y_pred_trans.reshape(-1, 1))[0, 0]
+            prediction = round(y_pred, 2)
+
+            # ✅ Compute Confidence Interval (±1.96σ in transformed space)
+            lower_trans = y_pred_trans[0] - 1.96 * residual_std
+            upper_trans = y_pred_trans[0] + 1.96 * residual_std
+
+            # Inverse-transform bounds to original scale
+            lower = qt_y.inverse_transform([[lower_trans]])[0, 0]
+            upper = qt_y.inverse_transform([[upper_trans]])[0, 0]
+
+            lower = round(lower, 2)
+            upper = round(upper, 2)
+
+            # 🔄 Instead of redirecting for AJAX
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({"prediction": prediction, "confidence_interval": [lower, upper]})
+        except Exception as e:
+            print("❌ Error during prediction:", str(e), flush=True)
+            traceback.print_exc()
+            return jsonify({"error": "Prediction failed. Check input values."}), 500
 
         # ✅ NEW: Store in session and redirect
         session["prediction"] = prediction  # Store in session

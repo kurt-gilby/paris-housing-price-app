@@ -4,7 +4,12 @@
   <meta charset="UTF-8">
   <title>🏡 Paris Housing Price Predictor</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <<!-- Bootstrap CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Bootstrap JS (required for tooltip) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
   <style>
     .slider-label {
       display: flex;
@@ -133,16 +138,18 @@
 
     const data = await response.json();
     const prediction = "€" + (data.prediction?.toFixed(2) || "Unknown");
+    const confidenceInterval = data.confidence_interval || [null, null];
 
     // ⏪ Save to local history
     inputObj["prediction"] = prediction;
+    inputObj["confidenceInterval"] = confidenceInterval;
     let history = JSON.parse(localStorage.getItem("predictionHistory") || "[]");
     history.unshift(inputObj);
     if (history.length > 10) history = history.slice(0, 10);
     localStorage.setItem("predictionHistory", JSON.stringify(history));
 
     // 🎯 Update UI
-    showPrediction(prediction);
+    showPrediction(prediction, confidenceInterval);
     showHistory(history);
 
   } catch (err) {
@@ -157,9 +164,20 @@
         location.reload();  // Simulates opening a fresh page
     }
 
-    function showPrediction(prediction) {
-      document.getElementById("predictionOutput").innerHTML = `<div class='alert alert-success'>📌 <strong>Last Predicted Price:</strong> ${prediction} <button class="btn btn-outline-danger btn-sm float-end" onclick="resetForm()">Reset</button></div>`;
-    }
+    function showPrediction(prediction, confidenceInterval = [null, null]) {
+  const [lower, upper] = confidenceInterval;
+  const ciText = (lower !== null && upper !== null)
+    ? `<br><small class="text-muted">Confidence Interval: €${lower.toLocaleString()} – €${upper.toLocaleString()}</small>`
+    : "";
+
+  document.getElementById("predictionOutput").innerHTML = `
+    <div class='alert alert-success'>
+      📌 <strong>Last Predicted Price:</strong> ${prediction}
+      ${ciText}
+      <button class="btn btn-outline-danger btn-sm float-end" onclick="resetForm()">Reset</button>
+    </div>
+  `;
+}
 
     function showHistory(history) {
   if (history.length === 0) {
@@ -188,12 +206,26 @@
 
   history.forEach((item, index) => {
     const featureKeys = ["hasYard_1", "hasPool_1", "isNewBuilt_1", "hasStormProtector_1", "hasStorageRoom_1"];
-    const features = featureKeys.filter(k => item[k]).map(k => k.replace("_1", "").replace("has", "").replace(/([A-Z])/g, ' $1').trim()).join(", ");
+    const features = featureKeys
+      .filter(k => item[k])
+      .map(k => k.replace("_1", "").replace("has", "").replace(/([A-Z])/g, ' $1').trim())
+      .join(", ");
+
+    const ci = item.confidenceInterval
+      ? `95% CI: €${item.confidenceInterval[0].toLocaleString()} – €${item.confidenceInterval[1].toLocaleString()}`
+      : "CI not available";
 
     table += `
       <tr>
         <td>${index + 1}</td>
-        <td><strong>${item.prediction}</strong></td>
+        <td>
+          <strong 
+            data-bs-toggle="tooltip" 
+            data-bs-placement="top" 
+            title="${ci}">
+            ${item.prediction}
+          </strong>
+        </td>
         <td>${item.squareMeters}</td>
         <td>${item.basement}</td>
         <td>${item.attic}</td>
@@ -206,7 +238,12 @@
 
   table += `</tbody></table></div>`;
   document.getElementById("history").innerHTML = table;
+
+  // Activate all tooltips after content is added
+  const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+  tooltipTriggerList.forEach(el => new bootstrap.Tooltip(el));
 }
+
     function loadLastInput() {
       const history = JSON.parse(localStorage.getItem("predictionHistory") || "[]");
       if (history.length === 0) return;
