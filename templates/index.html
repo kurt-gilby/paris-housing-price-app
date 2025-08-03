@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Paris Housing Price Predictor</title>
+  <!-- Bootstrap 5 CSS CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+</head>
+<body class="bg-light">
+  <div class="container py-5">
+    <h1 class="mb-4 text-center">🏡 Paris Housing Price Prediction</h1>
+
+    <form method="POST" class="row g-3 needs-validation" novalidate>
+<div class="mb-3">
+  <label for="squareMeters" class="form-label">Total Area (m²):</label>
+  <div class="text-end" style="font-weight: bold;" id="squareMetersLabel">20.0K</div>
+  <input 
+    type="range" 
+    class="form-range"
+    id="squareMeters"
+    name="squareMeters"
+    min="20000"
+    max="80000"
+    step="100"
+    value="20000"
+    oninput="updateSquareMetersLabel(this.value)">
+  <div class="d-flex justify-content-between mt-2" style="font-size: 0.85rem;">
+    <span>20K</span><span>30K</span><span>40K</span><span>50K</span>
+    <span>60K</span><span>70K</span><span>80K</span>
+  </div>
+</div>
+<div class="mb-3">
+  <label for="basement" class="form-label">Basement Area (m²):</label>
+  <div class="text-end" style="font-weight: bold;" id="basementLabel">2.0K</div>
+  <input 
+    type="range" 
+    class="form-range"
+    id="basement"
+    name="basement"
+    min="2000"
+    max="8000"
+    step="100"
+    value="2000"
+    oninput="updateBasementLabel(this.value)">
+  <div class="d-flex justify-content-between mt-2" style="font-size: 0.85rem;">
+    <span>2K</span><span>3K</span><span>4K</span><span>5K</span>
+    <span>6K</span><span>7K</span><span>8K</span>
+  </div>
+</div>
+<div class="mb-3">
+  <label for="attic" class="form-label">Attic Area (m²):</label>
+  <div class="text-end" style="font-weight: bold;" id="atticLabel">2.0K</div>
+  <input 
+    type="range" 
+    class="form-range"
+    id="attic"
+    name="attic"
+    min="2000"
+    max="8000"
+    step="100"
+    value="2000"
+    oninput="updateAtticLabel(this.value)">
+  <div class="d-flex justify-content-between mt-2" style="font-size: 0.85rem;">
+    <span>2K</span><span>3K</span><span>4K</span><span>5K</span>
+    <span>6K</span><span>7K</span><span>8K</span>
+  </div>
+</div>
+
+<div class="mb-3">
+  <label for="garage" class="form-label">Garage Area (m²):</label>
+  <div class="text-end" style="font-weight: bold;" id="garageLabel">200</div>
+  <input 
+    type="range" 
+    class="form-range"
+    id="garage"
+    name="garage"
+    min="200"
+    max="800"
+    step="100"
+    value="200"
+    oninput="updateGarageLabel(this.value)">
+  <div class="d-flex justify-content-between mt-2" style="font-size: 0.85rem;">
+    <span>200</span><span>300</span><span>400</span><span>500</span>
+    <span>600</span><span>700</span><span>800</span>
+  </div>
+</div>
+
+
+<div class="col-md-6">
+  <label class="form-label d-block">Region</label>
+  <div class="d-flex">
+    <div class="form-check me-3">
+      <input class="form-check-input" type="radio" name="region" id="region1" value="Grand Est" required>
+      <label class="form-check-label" for="region1">Grand Est</label>
+    </div>
+    <div class="form-check me-3">
+      <input class="form-check-input" type="radio" name="region" id="region2" value="Nouvelle-Aquitaine">
+      <label class="form-check-label" for="region2">Nouvelle-Aquitaine</label>
+    </div>
+    <div class="form-check">
+      <input class="form-check-input" type="radio" name="region" id="region3" value="Occitanie">
+      <label class="form-check-label" for="region3">Occitanie</label>
+    </div>
+  </div>
+</div>
+<div class="mb-3">
+  <label for="cityPartRange" class="form-label">City Part Range:</label>
+  <div class="text-end" style="font-weight: bold;" id="cityPartLabel">1</div>
+  <input 
+    type="range" 
+    class="form-range"
+    id="cityPartRange"
+    name="cityPartRange"
+    min="1"
+    max="10"
+    step="1"
+    value="1"
+    oninput="updateCityPartLabel(this.value)">
+  <div class="d-flex justify-content-between mt-2 px-1" style="font-size: 0.85rem;">
+    <span style="width: 10%; text-align: center;">1</span>
+    <span style="width: 10%; text-align: center;">2</span>
+    <span style="width: 10%; text-align: center;">3</span>
+    <span style="width: 10%; text-align: center;">4</span>
+    <span style="width: 10%; text-align: center;">5</span>
+    <span style="width: 10%; text-align: center;">6</span>
+    <span style="width: 10%; text-align: center;">7</span>
+    <span style="width: 10%; text-align: center;">8</span>
+    <span style="width: 10%; text-align: center;">9</span>
+    <span style="width: 10%; text-align: center;">10</span>
+  </div>
+</div>
+
+
+
+<div class="col-md-6">
+  <label class="form-label d-block">Age Category</label>
+  <div class="d-flex">
+    <div class="form-check me-3">
+      <input class="form-check-input" type="radio" name="ageCat" id="ageNew" value="New" required>
+      <label class="form-check-label" for="ageNew">New (&lt; 5 Years)</label>
+    </div>
+    <div class="form-check me-3">
+      <input class="form-check-input" type="radio" name="ageCat" id="ageMid" value="Mid">
+      <label class="form-check-label" for="ageMid">Mid (5–20 Years)</label>
+    </div>
+    <div class="form-check">
+      <input class="form-check-input" type="radio" name="ageCat" id="ageOld" value="Old">
+      <label class="form-check-label" for="ageOld">Old (&gt; 20 Years)</label>
+    </div>
+  </div>
+</div>
+
+
+      <div class="col-12">
+        <label class="form-label">Other Features</label><br>
+        <div class="form-check form-check-inline">
+          <input type="checkbox" name="hasYard_1" class="form-check-input">
+          <label class="form-check-label">Has Yard</label>
+        </div>
+        <div class="form-check form-check-inline">
+          <input type="checkbox" name="hasPool_1" class="form-check-input">
+          <label class="form-check-label">Has Pool</label>
+        </div>
+        <div class="form-check form-check-inline">
+          <input type="checkbox" name="isNewBuilt_1" class="form-check-input">
+          <label class="form-check-label">Newly Built</label>
+        </div>
+        <div class="form-check form-check-inline">
+          <input type="checkbox" name="hasStormProtector_1" class="form-check-input">
+          <label class="form-check-label">Storm Protector</label>
+        </div>
+        <div class="form-check form-check-inline">
+          <input type="checkbox" name="hasStorageRoom_1" class="form-check-input">
+          <label class="form-check-label">Storage Room</label>
+        </div>
+      </div>
+
+      <div class="col-12 mt-3">
+        <button type="submit" class="btn btn-primary">Predict Price</button>
+      </div>
+    </form>
+
+    {% if prediction %}
+    <div class="alert alert-success mt-4">
+      🧮 Predicted Price: <strong>€{{ prediction }}</strong>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Bootstrap JS (optional) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+  function updateSquareMetersLabel(val) {
+    const kVal = (val / 1000).toFixed(1) + 'K';
+    document.getElementById("squareMetersLabel").textContent = kVal;
+  }
+
+  function updateBasementLabel(val) {
+    const label = (val / 1000).toFixed(1) + 'K';
+    document.getElementById("basementLabel").textContent = label;
+  }
+
+  function updateAtticLabel(val) {
+  const label = (val / 1000).toFixed(1) + 'K';
+  document.getElementById("atticLabel").textContent = label;
+}
+function updateGarageLabel(val) {
+  document.getElementById("garageLabel").textContent = val;
+}
+function updateCityPartLabel(val) {
+  document.getElementById("cityPartLabel").textContent = val;
+}
+  window.addEventListener('DOMContentLoaded', () => {
+    updateSquareMetersLabel(document.getElementById("squareMeters").value);
+    updateBasementLabel(document.getElementById("basement").value);
+    updateAtticLabel(document.getElementById("attic").value);
+    updateGarageLabel(document.getElementById("garage").value);
+    updateCityPartLabel(document.getElementById("cityPartRange").value);
+  });
+</script>
+
+</body>
+</html>
