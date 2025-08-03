@@ -101,27 +101,64 @@
       document.getElementById(labelId).textContent = val;
     }
 
-    function handleSubmit(e) {
-      e.preventDefault();
-      const form = e.target;
-      const formData = new FormData(form);
-      const inputObj = {};
-      formData.forEach((value, key) => inputObj[key] = value || (form[key].checked ? true : false));
+    async function handleSubmit(e) {
+  e.preventDefault();
 
-      const prediction = "€" + (Math.random() * 1e6).toFixed(2); // Replace with actual server call
-      inputObj["prediction"] = prediction;
+  const form = e.target;
+  const formData = new FormData(form);
+  const inputObj = {};
+  
+  formData.forEach((value, key) => {
+    if (inputObj[key]) {
+      // For checkboxes with same name
+      if (!Array.isArray(inputObj[key])) {
+        inputObj[key] = [inputObj[key]];
+      }
+      inputObj[key].push(value);
+    } else {
+      inputObj[key] = value || (form[key]?.checked ? true : false);
+    }
+  });
 
-      let history = JSON.parse(localStorage.getItem("predictionHistory") || "[]");
-      history.unshift(inputObj);
-      if (history.length > 10) history = history.slice(0, 10);
-      localStorage.setItem("predictionHistory", JSON.stringify(history));
+  try {
+    const response = await fetch("/", {
+      method: "POST",
+      headers: {
+        "X-Requested-With": "XMLHttpRequest"  // 🔑 This tells Flask to return JSON
+      },
+      body: formData
+    });
 
-      showPrediction(prediction);
-      showHistory(history);
+    if (!response.ok) throw new Error(`Server error: ${response.status}`);
+
+    const data = await response.json();
+    const prediction = "€" + (data.prediction?.toFixed(2) || "Unknown");
+
+    // ⏪ Save to local history
+    inputObj["prediction"] = prediction;
+    let history = JSON.parse(localStorage.getItem("predictionHistory") || "[]");
+    history.unshift(inputObj);
+    if (history.length > 10) history = history.slice(0, 10);
+    localStorage.setItem("predictionHistory", JSON.stringify(history));
+
+    // 🎯 Update UI
+    showPrediction(prediction);
+    showHistory(history);
+
+  } catch (err) {
+    console.error("Prediction error:", err);
+    alert("Prediction failed. Try again.");
+  }
+}
+
+
+    function resetForm() {
+        localStorage.removeItem("predictionHistory");
+        location.reload();  // Simulates opening a fresh page
     }
 
     function showPrediction(prediction) {
-      document.getElementById("predictionOutput").innerHTML = `<div class='alert alert-success'>🧮 Predicted Price: <strong>${prediction}</strong> <button class="btn btn-link" onclick="loadLastInput()">Go Home</button></div>`;
+      document.getElementById("predictionOutput").innerHTML = `<div class='alert alert-success'>📌 <strong>Last Predicted Price:</strong> ${prediction} <button class="btn btn-outline-danger btn-sm float-end" onclick="resetForm()">Reset</button></div>`;
     }
 
     function showHistory(history) {

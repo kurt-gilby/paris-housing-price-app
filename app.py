@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 import joblib
 import numpy as np
 import pandas as pd
@@ -9,6 +9,7 @@ app.secret_key = 'dev_secret_123'  # Replace with a strong secret in production
 
 # Load model and transformers
 model = joblib.load("models/linear_model.pkl")
+print("✅ Loaded model type:", type(model)) 
 qt_X = joblib.load("models/quantile_transformer_X.pkl")
 qt_y = joblib.load("models/quantile_transformer_y.pkl")
 feature_names = joblib.load("models/feature_names.pkl")
@@ -20,6 +21,7 @@ numcols = ['squareMeters', 'basement', 'attic', 'garage']
 @app.route("/", methods=["GET", "POST"])
 def predict():
     if request.method == "POST":
+        print("🔁 POST request received", flush=True)
         # --------- Extract form data as before ----------
         input_data = {
             "squareMeters": float(request.form["squareMeters"]),
@@ -56,8 +58,8 @@ def predict():
             input_data["ageCat_Old"] = 0
 
         # 🔍 Log input
-        print("\n📥 Raw form input data:")
-        print(json.dumps(input_data, indent=2))
+        print("\n📥 Raw form input data:", flush=True)
+        print(json.dumps(input_data, indent=2), flush=True)
 
         X_input = pd.DataFrame([input_data])
 
@@ -80,6 +82,10 @@ def predict():
         y_pred_trans = model.predict(X_trans)
         y_pred = qt_y.inverse_transform(y_pred_trans.reshape(-1, 1))[0, 0]
         prediction = round(y_pred, 2)
+
+        # 🔄 Instead of redirecting for AJAX
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({"prediction": prediction})
 
         # ✅ NEW: Store in session and redirect
         session["prediction"] = prediction  # Store in session
