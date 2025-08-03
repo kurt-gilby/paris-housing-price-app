@@ -125,13 +125,51 @@
     }
 
     function showHistory(history) {
-      const html = history.map((item, i) => {
-        const keys = Object.entries(item).filter(([k]) => k !== 'prediction').map(([k, v]) => `<strong>${k}</strong>: ${v}`).join(", ");
-        return `<li>${item.prediction} → ${keys}</li>`;
-      }).join("");
-      document.getElementById("history").innerHTML = `<h5>Last 10 Predictions</h5><ul>${html}</ul>`;
-    }
+  if (history.length === 0) {
+    document.getElementById("history").innerHTML = "";
+    return;
+  }
 
+  let table = `
+    <h5>Last 10 Predictions</h5>
+    <div class="table-responsive">
+    <table class="table table-striped table-bordered table-sm align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>#</th>
+          <th>Prediction (€)</th>
+          <th>Total Area</th>
+          <th>Basement</th>
+          <th>Attic</th>
+          <th>Garage</th>
+          <th>Region</th>
+          <th>Age Category</th>
+          <th>Features</th>
+        </tr>
+      </thead>
+      <tbody>`;
+
+  history.forEach((item, index) => {
+    const featureKeys = ["hasYard_1", "hasPool_1", "isNewBuilt_1", "hasStormProtector_1", "hasStorageRoom_1"];
+    const features = featureKeys.filter(k => item[k]).map(k => k.replace("_1", "").replace("has", "").replace(/([A-Z])/g, ' $1').trim()).join(", ");
+
+    table += `
+      <tr>
+        <td>${index + 1}</td>
+        <td><strong>${item.prediction}</strong></td>
+        <td>${item.squareMeters}</td>
+        <td>${item.basement}</td>
+        <td>${item.attic}</td>
+        <td>${item.garage}</td>
+        <td>${item.region || "Grand Est"}</td>
+        <td>${item.ageCat}</td>
+        <td>${features || "None"}</td>
+      </tr>`;
+  });
+
+  table += `</tbody></table></div>`;
+  document.getElementById("history").innerHTML = table;
+}
     function loadLastInput() {
       const history = JSON.parse(localStorage.getItem("predictionHistory") || "[]");
       if (history.length === 0) return;
